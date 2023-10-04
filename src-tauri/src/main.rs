@@ -4,10 +4,8 @@ use std::{result, vec};
 
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 use surrealdb::{
     engine::local::{Db, RocksDb},
-    opt::IntoResource,
     sql::Thing,
     Surreal,
 };
@@ -32,7 +30,7 @@ fn main() {
         .expect("error while running tauri application");
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 struct Topic {
     title: String,
     content: String,
@@ -48,7 +46,7 @@ impl Topic {
         }
     }
 }
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 struct TopicWithId {
     id: Thing,
     #[serde(flatten)]
@@ -120,5 +118,52 @@ mod test {
     }
 
     #[test]
-    fn show_topics() {}
+    fn show_topic_test() {
+        tauri::async_runtime::block_on(async {
+            let mut dir = std::env::current_dir().unwrap();
+            dir.push("test.db");
+            DB.connect::<RocksDb>(dir.clone()).await.unwrap();
+            DB.use_ns("test").use_db("test").await.unwrap();
+
+            let id = create_topic("title", Some("content")).await.unwrap();
+
+            let result = show_topic(Some(&id)).await.unwrap();
+            assert!(result.len() == 1);
+            assert_eq!(result[0].id.to_raw(), id);
+
+            std::fs::remove_dir_all(dir).unwrap();
+        });
+    }
+
+    #[test]
+    fn show_topics_test() {
+        tauri::async_runtime::block_on(async {
+            let mut dir = std::env::current_dir().unwrap();
+            dir.push("test.db");
+            if std::fs::metadata(&dir).is_ok() {
+                std::fs::remove_dir_all(&dir).unwrap();
+            }
+            DB.connect::<RocksDb>(dir.clone()).await.unwrap();
+            DB.use_ns("test").use_db("test").await.unwrap();
+            let mut ids = Vec::new();
+            for _ in 0..5 {
+                let id = create_topic("title", Some("content")).await.unwrap();
+                ids.push(id);
+            }
+
+            let result = show_topic(None).await.unwrap();
+
+            assert!(result.len() == 5);
+            for id in ids {
+                assert!(result
+                    .clone()
+                    .into_iter()
+                    .map(|e| e.id.to_raw())
+                    .collect::<Vec<_>>()
+                    .contains(&id));
+            }
+
+            std::fs::remove_dir_all(&dir).unwrap();
+        });
+    }
 }
