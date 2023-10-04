@@ -26,6 +26,8 @@ createEffect(async () => {
 // #endregion
 
 // #region Components
+
+/** トピックの編集 */
 export function TopicEditor() {
     const [title, setTitle] = createSignal("");
     const [content, setContent] = createSignal("");
@@ -35,25 +37,55 @@ export function TopicEditor() {
     }
     return (
         <div>
-            <input type="text" value={title()} onInput={({ target }) => setTitle(target.value)} />
-            <input type="text" value={content()} onInput={({ target }) => setContent(target.value)} />
+            <input
+                type="text"
+                value={title()}
+                placeholder="タイトルを入力してください"
+                onInput={({ target }) => setTitle(target.value)}
+                style={{
+                    "display": "block",
+                    "margin-left": "auto",
+                    "margin-right": "auto",
+                }}
+            />
+
+            <textarea
+                value={content()}
+                onInput={({ target }) => setContent(target.value)}
+                placeholder="内容を入力してください"
+                cols={30}
+                rows={10}
+                style={{
+                    "display": "block",
+                    "font-size": "1.2rem",
+                    "width": "100%"
+                }}
+            />
             <button onClick={handleCreate}>create</button>
         </div>
     )
 }
 
+/** トピックの一覧表示 */
 export function TopicList() {
     onMount(() => {
         loadTopics()
     })
     return (
         <div>
-            <div>topic list</div>
-            <For each={topics()}>
-                {(topic) => (
-                    <p>{topic.title}</p>
-                )}
-            </For>
+            <ul>
+                <For each={topics()}>
+                    {(topic) => (
+                        <li>
+                            <p>
+                                <span>{topic.title}</span>
+                                <span>{topic.content}</span>
+                            </p>
+                        </li>
+                    )}
+                </For>
+            </ul>
+
         </div>
     )
 }
