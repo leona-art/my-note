@@ -1,6 +1,5 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-use std::{result, vec};
 
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
@@ -15,7 +14,7 @@ static DB: Lazy<Surreal<Db>> = Lazy::new(Surreal::init);
 
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![create_topic])
+        .invoke_handler(tauri::generate_handler![create_topic, show_topic])
         // DBの使用準備
         .setup(|_| {
             tauri::async_runtime::block_on(async {
@@ -88,8 +87,6 @@ async fn show_topic(id: Option<&str>) -> Result<Vec<TopicWithId>, String> {
 }
 
 mod test {
-    use std::vec;
-
     use super::*;
 
     #[test]
